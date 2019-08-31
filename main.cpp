@@ -28,23 +28,18 @@ SOFTWARE.
 bool readFileContent(const std::string& filePath, std::string& fileContent){  
     std::ifstream fin(filePath.c_str(), std::ios::binary | std::ios::in);
     if (fin) {
-        long buff_size =1024*1000;
-        long begin = fin.tellg();
-        fin.seekg (0, std::ios::end);
-        long end = fin.tellg();
-        fin.seekg (0, std::ios::beg);
-        long file_size = end - begin;
-        long readed_data_size = 0;      
-        while(readed_data_size< file_size) {      
-            if (file_size - readed_data_size>buff_size){
-                fileContent.resize(buff_size);
-                readed_data_size+=buff_size;
-            }else{
-                fileContent.resize(file_size - readed_data_size);
-                readed_data_size=file_size;
-            }
-            fin.read(&fileContent[0], fileContent.size());       
-        }      
+        long bufferSize =1024;
+        while(!fin.eof()) {      
+	    auto delta = fileContent.size();
+	    fileContent.resize(delta + bufferSize);
+            fin.read(&fileContent[delta],bufferSize);
+	    auto readedSize = fin.gcount();
+	    //std::cout<<"readed size was: " << readedSize<<std::endl;
+	    if(readedSize < bufferSize) {
+                //std::cout<<"read fix size..."<<std::endl;
+	        fileContent.resize(delta + readedSize);
+	    }
+	}
         fin.close();
         return true;
     }
@@ -54,9 +49,8 @@ bool readFileContent(const std::string& filePath, std::string& fileContent){
 
 int main(int argc, char **argv)
 {
-	std::string data;
-    bool a = readFileContent("jsonTestData.json", data);
-    if(a){
+    std::string data;
+    if(readFileContent("jsonTestData.json", data)){
         std::cout<<data<<std::endl; 
     }else{
         std::cout<<"failed to open and read file..."<<std::endl;
